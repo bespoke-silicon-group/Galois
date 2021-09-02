@@ -291,6 +291,7 @@ struct ComputeForces {
                 root_dsq = diameter * diameter * config.itolsq;
         }
 
+        // DR: Compute forces on a body
         template <typename Context>
         void computeForce(Body* b, Context& cnx) {
                 Point p = b->acc;
@@ -305,29 +306,46 @@ struct ComputeForces {
                 Frame(Octree* _node, double _dsq) : dsq(_dsq), node(_node) {}
         };
 
+        // DR: "Thread Loop" for computing the foces on a body
         template <typename Context>
         void iterate(Body& b, Context& cnx) {
                 std::deque<Frame, galois::PerIterAllocTy::rebind<Frame>::other> stack(
                                                                                       cnx.getPerIterAlloc());
+                // DR: Perform DFS traversal of tree. If a node is
+                // "far enough" away, then do not consider its leaves
+                // and only consider it's center of mass.
+                //
+                // This is the Barnes-Hut approximation. If "far
+                // enough" is too large, this algorithm degrades to
+                // O(N^2).
                 stack.push_back(Frame(top, root_dsq));
 
                 while (!stack.empty()) {
                         const Frame f = stack.back();
                         stack.pop_back();
 
+                        // DR: Compute distance squared (to avoid sqrt)
                         Point p    = b.pos - f.node->pos;
                         double psq = p.dist2();
 
                         // Node is far enough away, summarize contribution
+                        // DR: If node "Far enough", summarize using
+                        // center of mass instead of individual bodies
                         if (psq >= f.dsq) {
                                 b.acc += updateForce(p, psq, f.node->mass);
                                 continue;
                         }
 
+                        // DR: If the node is not far enough, recurse
+                        // by adding all sub-nodes to the stack, and
+                        // adding the contribution of the individual
+                        // bodies.  DR: Why /4?
                         double dsq = f.dsq * 0.25;
+                        // DR: Iterate through the children
                         for (int i = 0; i < f.node->nChildren; i++) {
                                 Node* n = f.node->child[i].getValue();
                                 assert(n);
+                                // DR: If a sub-node is a body/leaf
                                 if (f.node->cLeafs & (1 << i)) {
                                         assert(n->Leaf);
                                         if (static_cast<const Node*>(&b) != n) {
