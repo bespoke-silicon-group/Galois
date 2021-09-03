@@ -85,15 +85,19 @@ public:
                 centerElement = &graph->getData(centerNode, galois::MethodFlag::WRITE);
                 // DR: If the current bad triangle is obtuse, traverse
                 // the edge opposite the obtuse angle and repeat until
-                // a non-obtuse triangle is found, or a triangle no
-                // longer exists in the graph.
+                // a non-obtuse triangle is found, or a triangle that
+                // no longer exists in the graph.
                 //
                 // The key here is that the circumcenter of an obtuse
                 // triangle is always outside the triangle.
+                // 
+                // A delaunay mesh initally has no obtuse triangles
+                // (by definition -- all triangles contain their own
+                // circumcenters).
                 //
                 // I still don't understand the termination condition
                 // here. Two obtuse triangles with the angles facing
-                // each other will bounce back and forth.
+                // each other will bounce back and forth. 
                 //
                 // This could be impossible given the formulation of a Delaunay Triangulation
                 while (graph->containsNode(centerNode, galois::MethodFlag::WRITE) &&
@@ -105,12 +109,16 @@ public:
                 }
                 // DR: Compute the circumcenter of the final triangle
                 // or segment, and use that as the cavity center
-                // DR: Maybe the center element is the edge?
                 center = centerElement->getCenter();
                 // DR: Compute dim (2 == segment, 3 == triangle)
                 dim    = centerElement->dim();
                 pre.addNode(centerNode);
                 frontier.push_back(centerNode);
+                // DR: It seems odd that this method traverses away
+                // from a bad obtuse triangle, but build will actually
+                // backtrack to find the original bad triangle by
+                // virtue of the circumcenters of obtuse circles being
+                // outside of their triangles.
         }
 
         // DR: build the cavity of surrounding triangles
@@ -134,9 +142,9 @@ public:
         void expand(GNode node, GNode next) {
                 
                 Element& nextElement = graph->getData(next, galois::MethodFlag::WRITE);
-                // DR: (dim != 2 || nextElement.dim() =! 2 || next != centerNode) && nextElement.inCircle(center)
-                // DR: Circumcenter logic
-                // DR If next is not a second encroached segment.
+                // DR: If we are not a segment AND next is not also an
+                // encroached segment, and next is in the
+                // circumcircle.
                 if ((!(dim == 2 && nextElement.dim() == 2 && next != centerNode)) &&
                     nextElement.inCircle(center)) {
                         // DR: inCircle says next is part of the cavity...
@@ -146,7 +154,7 @@ public:
                         // DR: Encroached element is a segment and
                         // current element is not, switch the center
                         // to that segment (initialize(next)) and
-                        // repeat build.
+                        // repeat build. I believe segments are edges of the mesh.
                         if ((nextElement.dim() == 2) && (dim != 2)) {
                                 // is segment, and we are encroaching
                                 initialize(next);
