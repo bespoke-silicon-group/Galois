@@ -76,6 +76,7 @@ public:
     // computeCenter();
   }
 
+  // DR: Compute the circumcenter of a triangle?
   Tuple getCenter() const {
     if (dim() == 2) {
       return (coords[0] + coords[1]) * 0.5;
