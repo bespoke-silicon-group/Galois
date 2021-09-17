@@ -492,6 +492,7 @@ private: ///////////////////////////////////////////////////////////////////////
     }
 
     template <bool _A1 = HasNoLockable>
+    // Foo
     void acquire(MethodFlag, typename std::enable_if<_A1>::type* = 0) {}
 
   public:
