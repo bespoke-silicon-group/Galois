@@ -164,7 +164,7 @@ struct BuildOctree {
                 // go through the tree lock-free while we can
                 // DR: Recurse if the child node exists, and it is not a leaf.
                 if (child && !child->Leaf) {
-                        insert(b, static_cast<Octree*>(child), radius);
+                        insert(b, static_cast<Octree*>(child), radius * .5f);
                         return;
                 }
 
@@ -454,7 +454,7 @@ std::ostream& operator<<(std::ostream& os, const Config& c) {
            << " dtime: " << c.dtime << " eps: " << c.eps << " tol: " << c.tol;
         return os;
 }
-
+/*
 void printRec(std::ofstream& file, Node* node, unsigned level) {
         static const char* ct[] = {
                 "blue", "cyan", "aquamarine", "chartreuse",
@@ -484,7 +484,7 @@ void printTree(Octree* node) {
         printRec(file, node, 0);
         file << "}\n";
 }
-
+*/
 /**
  * Generates random input according to the Plummer model, which is more
  * realistic but perhaps not so much so according to astrophysicists
